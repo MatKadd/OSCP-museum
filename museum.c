@@ -16,7 +16,7 @@ void *visitor(void* i) {
     int watch = rand() % (t_max - t_min) + t_min;   //getting a time for staying in a room for each visitor
     while(1) {              //entering hall A
         sem_wait(&sem);     //waiting for semaphore to open
-        if (cap_a > 0) {    //if there is space in hall A, enter
+        if (cap_a > 1) {    //if there is space in hall A, enter (we are always leaving one spot free, so people from B can exit easily)
             printf("Visitor %d has entered hall A\n", id);
             cap_a--;        //decreasing capacity left in hall A
             sem_post(&sem); //releasing semaphore
@@ -25,8 +25,8 @@ void *visitor(void* i) {
         }
         sem_post(&sem);     //if there was no space in hall A, release semaphore
     }
-    float rng = rand()%100;
-    if (rng/100 < p){       //deciding if one enters hall B
+    int rng = rand()%100;
+    if (rng <= 100*p){      //deciding if one enters hall B
         while(1){           //entering hall B
             sem_wait(&sem); //waiting for semaphore to open
             if (cap_b > 0){ //if there is space in hall B, enter
@@ -39,17 +39,11 @@ void *visitor(void* i) {
             }
             sem_post(&sem); //if there was no space in hall B, release semaphore
         }
-        while(1) {          //leaving museum from hall B
-            sem_wait(&sem); //waiting for semaphore to open
-            if (cap_a > 0) {    //if there is space in hall A, a visitor can leave from hall B
-                printf("Visitor %d has left hall B and then hall A\n", id);
-                cap_b++;    //increasing capacity left in hall B
-                sem_post(&sem); //releasing semaphore
-                break;
-            }
-            sem_post(&sem); //if there was no space in hall A, release semaphore
-        }
-
+        //leaving museum from hall B (no need to check if we can leave through A because there is always one spot free there)
+        sem_wait(&sem); //waiting for semaphore to open
+        printf("Visitor %d has left hall B and then hall A\n", id);
+        cap_b++;    //increasing capacity left in hall B
+        sem_post(&sem); //releasing semaphore
     }
     else {  //leaving museum from hall A
         sem_wait(&sem); //waiting for semaphore to open
@@ -71,9 +65,9 @@ int main() {
     scanf("%d", &cap_a);
     puts("What is the capacity of hall B (smaller than A)?");
     scanf("%d", &cap_b);
-    puts("What is the minimal time a visitor spends in a hall?");
+    puts("What is the minimal time a visitor spends in a hall (in seconds)?");
     scanf("%d", &t_min);
-    puts("What is the maximal time a visitor spends in a hall?");
+    puts("What is the maximal time a visitor spends in a hall (in seconds)?");
     scanf("%d", &t_max);
     puts("What is the probability that a visitor enters hall B?");
     scanf("%f", &p);
